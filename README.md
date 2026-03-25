@@ -11,7 +11,7 @@ PawMatch is a platform that connects animals from shelters with loving families 
 |------|------|
 | Malika | Backend Developer (Django + DRF) |
 | Tanzilya | Frontend Developer (Angular) |
-| Yedige | Integrator / Full-stack Support |
+| Alkhaidar | Integrator / Full-stack Support |
 
 ---
 
