@@ -56,4 +56,3 @@ PawMatch is a full-stack web application built with Angular (frontend) and Djang
 
 ---
 
-## 🔗 Relationships
