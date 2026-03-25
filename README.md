@@ -24,7 +24,6 @@ PawMatch is a full-stack web application built with Angular (frontend) and Djang
 - 📝 Submit adoption requests and connect with shelters
 - 💊 Track health records (vaccinations, medications, vet visits)
 - ⏰ Set reminders for medications and vet appointments
-- 🏆 Earn achievements for consistent pet care
 
 ---
 
