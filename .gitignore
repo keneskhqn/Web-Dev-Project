@@ -1,0 +1,22 @@
+# Parent directories - these belong to other repos
+../Lab1/
+../Web-Dev/
+
+# Common Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
