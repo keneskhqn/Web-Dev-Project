@@ -1,5 +1,4 @@
 # Web-Dev-Project
-<<<<<<< HEAD
 # 🐾 PawMatch
 
 PawMatch is a platform that connects animals from shelters with loving families through a Tinder-like swiping interface. The system helps users discover animals available for adoption and provides a comprehensive health tracker for their adopted pets.
