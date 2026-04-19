@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+.env
+.angular/
+README.md
+# Фронтенд
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.DS_Store
+*.log
