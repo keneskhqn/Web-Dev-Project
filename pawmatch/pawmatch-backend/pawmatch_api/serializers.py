@@ -1,7 +1,35 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Animal, Shelter, Swipe, Match, Pet, HealthRecord, Reminder
+from django.db.models import Count
+from .models import Animal, Shelter, Swipe, Match, Pet
 
+class SwipeInputSerializer(serializers.Serializer):
+    animal_id = serializers.IntegerField(min_value=1)
+    is_like   = serializers.BooleanField()
+
+    def validate_animal_id(self, value):
+        if not Animal.objects.filter(id=value, is_adopted=False).exists():
+            raise serializers.ValidationError('Животное не найдено.')
+        return value
+
+class RegisterInputSerializer(serializers.Serializer):
+    username         = serializers.CharField(min_length=3, max_length=150)
+    email            = serializers.EmailField()
+    password         = serializers.CharField(min_length=6, write_only=True)
+    confirm_password = serializers.CharField(min_length=6, write_only=True)
+
+    def validate(self, data):
+        if data['password'] != data['confirm_password']:
+            raise serializers.ValidationError({'confirm_password': 'Пароли не совпадают.'})
+        return data
+
+    def create_user(self):
+        data = self.validated_data
+        return User.objects.create_user(
+            username=data['username'],
+            email=data['email'],
+            password=data['password'],
+        )
 
 class UserSerializer(serializers.ModelSerializer):
     is_staff = serializers.BooleanField(read_only=True)
@@ -79,10 +107,17 @@ class SwipeSerializer(serializers.ModelSerializer):
 
 class MatchSerializer(serializers.ModelSerializer):
     animal = AnimalSerializer(read_only=True)
+    animal_id = serializers.PrimaryKeyRelatedField(
+        queryset=Animal.objects.all(), source='animal', write_only=True
+    )
+    user = UserSerializer(read_only=True)
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), source='user', write_only=True, required=False
+    )
 
     class Meta:
         model  = Match
-        fields = ['id', 'animal', 'created_at']
+        fields = ['id', 'animal', 'animal_id', 'user', 'user_id', 'created_at']
 
 
 class PetSerializer(serializers.ModelSerializer):
@@ -100,13 +135,46 @@ class PetSerializer(serializers.ModelSerializer):
         fields = ['id', 'animal', 'animal_id', 'user', 'user_id', 'name', 'birth_date', 'weight']
 
 
-class HealthRecordSerializer(serializers.ModelSerializer):
-    class Meta:
-        model  = HealthRecord
-        fields = ['id', 'pet', 'record_type', 'title', 'description', 'date', 'next_due_date']
+# ── Custom Serializers (Non-Model) ─────────────────────────────────────────────
+
+class UserProfileSerializer(serializers.Serializer):
+    """Combines user data with their activity statistics"""
+    user_id = serializers.IntegerField()
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    is_staff = serializers.BooleanField()
+    total_pets = serializers.SerializerMethodField()
+    total_matches = serializers.SerializerMethodField()
+    total_swipes = serializers.SerializerMethodField()
+    favorite_species = serializers.SerializerMethodField()
+    
+    def get_total_pets(self, obj):
+        """Get count of user's pets"""
+        return Pet.objects.filter(user_id=obj['user_id']).count()
+    
+    def get_total_matches(self, obj):
+        """Get count of user's matches"""
+        return Match.objects.filter(user_id=obj['user_id']).count()
+    
+    def get_total_swipes(self, obj):
+        """Get count of user's swipes"""
+        return Swipe.objects.filter(user_id=obj['user_id']).count()
+    
+    def get_favorite_species(self, obj):
+        """Get user's most liked animal species"""
+        most_liked = Swipe.objects.filter(
+            user_id=obj['user_id'], is_like=True
+        ).values('animal__species').annotate(
+            count=Count('id')
+        ).order_by('-count').first()
+        return most_liked['animal__species'] if most_liked else None
 
 
-class ReminderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model  = Reminder
-        fields = ['id', 'pet', 'title', 'date_time', 'is_completed']
+class SwipeStatsSerializer(serializers.Serializer):
+    """Aggregates swipe statistics for a user"""
+    user_id = serializers.IntegerField()
+    total_swipes = serializers.IntegerField()
+    likes_count = serializers.IntegerField()
+    dislikes_count = serializers.IntegerField()
+    match_rate = serializers.FloatField()
+    last_swiped = serializers.DateTimeField(required=False, allow_null=True)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Shelter, Animal, Swipe, Match, Pet, HealthRecord, Reminder
+from .models import Shelter, Animal, Swipe, Match, Pet
 
 
 @admin.register(Shelter)
@@ -27,13 +27,3 @@ class MatchAdmin(admin.ModelAdmin):
 @admin.register(Pet)
 class PetAdmin(admin.ModelAdmin):
     list_display = ['name', 'user', 'animal', 'birth_date', 'weight']
-
-
-@admin.register(HealthRecord)
-class HealthRecordAdmin(admin.ModelAdmin):
-    list_display = ['title', 'pet', 'record_type', 'date', 'next_due_date']
-
-
-@admin.register(Reminder)
-class ReminderAdmin(admin.ModelAdmin):
-    list_display = ['title', 'pet', 'date_time', 'is_completed']

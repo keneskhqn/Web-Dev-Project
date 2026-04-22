@@ -58,9 +58,12 @@ for user_data in users_data:
 # ========== 2. ПРИЮТЫ ==========
 print("🏠 Создание приютов...")
 shelters_data = [
-    dict(name='Happy Paws Almaty', address='г. Алматы, ул. Толе би, 78', phone='+7 700 123 45 67', latitude=43.238949, longitude=76.889709),
-    dict(name='Dog Shelter Astana', address='г. Астана, пр. Туран, 15', phone='+7 700 765 43 21', latitude=51.128207, longitude=71.430420),
-    dict(name='Cat Home Shymkent', address='г. Шымкент, ул. Байтурсынова, 22', phone='+7 700 111 22 33', latitude=42.341700, longitude=69.590100)
+    dict(name='Happy Paws Almaty', address='г. Алматы, ул. Толе би, 78', phone='+7 700 123 45 67', latitude=43.238949, longitude=76.889709,
+         instagram='https://instagram.com/happypaws_almaty', telegram='https://t.me/happypaws_almaty'),
+    dict(name='Dog Shelter Astana', address='г. Астана, пр. Туран, 15', phone='+7 700 765 43 21', latitude=51.128207, longitude=71.430420,
+         instagram='https://instagram.com/dogshelter_astana', telegram='https://t.me/dogshelter_astana'),
+    dict(name='Cat Home Shymkent', address='г. Шымкент, ул. Байтурсынова, 22', phone='+7 700 111 22 33', latitude=42.341700, longitude=69.590100,
+         instagram='https://instagram.com/cathome_shymkent', telegram='https://t.me/cathome_shymkent')
 ]
 
 for data in shelters_data:

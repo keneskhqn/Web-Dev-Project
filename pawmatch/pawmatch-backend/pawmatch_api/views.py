@@ -1,15 +1,15 @@
 from django.contrib.auth.models import User
 from rest_framework import generics, status, permissions
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import APIView, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Animal, Shelter, Swipe, Match, Pet, HealthRecord, Reminder
+from .models import Animal, Shelter, Swipe, Match, Pet
 from .serializers import (
     RegisterSerializer, UserSerializer,
     AnimalSerializer, AnimalCreateSerializer, ShelterSerializer,
     SwipeSerializer, MatchSerializer,
-    PetSerializer, HealthRecordSerializer, ReminderSerializer,
+    PetSerializer, UserProfileSerializer, SwipeStatsSerializer,
 )
 
 
@@ -34,6 +34,13 @@ def me_view(request):
     return Response(UserSerializer(request.user).data)
 
 
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def logout_view(request):
+    """Stateless JWT logout — client must discard tokens."""
+    return Response({'detail': 'Successfully logged out.'}, status=status.HTTP_200_OK)
+
+
 # ── Shelters ──────────────────────────────────────────────────────────────────
 
 class ShelterListView(generics.ListAPIView):
@@ -46,50 +53,66 @@ class ShelterListView(generics.ListAPIView):
 @api_view(['POST'])
 def assistant_view(request):
     message = (request.data.get('message') or '').strip()
+    lang = (request.data.get('lang') or 'en').strip().lower()
     normalized = message.lower()
+    is_ru = lang == 'ru'
 
     if not message:
         return Response({
-            'reply': 'Напишите вопрос о платформе, приютах, матчах или профиле — и я подскажу.',
+            'reply': 'Напишите вопрос о платформе, приютах, матчах или профиле — и я подскажу.' if is_ru
+                     else 'Ask a question about the platform, shelters, matches, or profile — I will help.',
             'suggestions': [
-                'Как работает мэтчинг?',
-                'Как связаться с приютом?',
-                'Что есть в профиле?',
-            ]
+                ['Как работает мэтчинг?', 'Как связаться с приютом?', 'Что есть в профиле?'] if is_ru
+                else ['How does matching work?', 'How to contact a shelter?', "What's in the profile?"]
+            ][0]
         })
 
     shelters = list(Shelter.objects.all())
     shelter_names = [shelter.name for shelter in shelters]
 
-    if any(word in normalized for word in ['матч', 'мэтч', 'matching', 'свайп', 'лайк']):
+    if any(word in normalized for word in ['матч', 'мэтч', 'matching', 'match', 'свайп', 'swipe', 'лайк', 'like']):
         reply = (
-            'Мэтч создаётся не после каждого лайка. Система учитывает интерес к питомцу: '
-            'нужно поставить лайк животному, которое уже понравилось другим пользователям '
-            'или набрало достаточно симпатий. Тогда оно попадает в раздел «Матчи».'
+            'Мэтч создаётся автоматически при каждом лайке. Поставь лайк животному — '
+            'и оно сразу появится в разделе «Матчи».'
+        ) if is_ru else (
+            'A match is created automatically with every like. Just swipe right on an animal '
+            'and it will instantly appear in your Matches section.'
         )
-    elif any(word in normalized for word in ['приют', 'shelter', 'телефон', 'позвон', 'связаться']):
+    elif any(word in normalized for word in ['приют', 'shelter', 'телефон', 'phone', 'позвон', 'contact', 'связаться']):
         shelters_text = '; '.join(
-            f'{shelter.name}: {shelter.phone or "телефон не указан"}'
-            for shelter in shelters[:4]
-        ) or 'Список приютов пока пуст.'
+            f'{s.name}: {s.phone or ("телефон не указан" if is_ru else "no phone")}'
+            for s in shelters[:4]
+        ) or ('Список приютов пока пуст.' if is_ru else 'No shelters available yet.')
         reply = (
-            'На странице «Приюты» можно открыть карточку приюта, посмотреть адрес, контакты и карту. '
+            f'На странице «Приюты» можно открыть карточку приюта, посмотреть адрес, контакты и карту. '
             f'Сейчас доступны: {shelters_text}.'
+        ) if is_ru else (
+            f'On the Shelters page you can open a shelter card to see the address, contacts, and map. '
+            f'Currently available: {shelters_text}.'
         )
-    elif any(word in normalized for word in ['профиль', 'аккаунт', 'кабинет']):
+    elif any(word in normalized for word in ['профиль', 'аккаунт', 'кабинет', 'profile', 'account']):
         reply = (
-            'В профиле можно посмотреть свои данные, быстрые ссылки на свайпы, матчи и питомцев, '
-            'а также задать вопрос AI-помощнику. Для администратора там доступен блок управления питомцами.'
+            'В профиле можно посмотреть свои данные, статистику свайпов, быстрые ссылки и '
+            'задать вопрос AI-помощнику. Для администратора доступен блок управления.'
+        ) if is_ru else (
+            'In your profile you can view your account info, swipe statistics, quick links, '
+            'and chat with the AI assistant. Admins also have a management panel there.'
         )
-    elif any(word in normalized for word in ['питом', 'pet', 'животн', 'добавить']):
+    elif any(word in normalized for word in ['питом', 'pet', 'животн', 'animal', 'добавить', 'add']):
         reply = (
-            'Питомцы — это животные, закреплённые за пользователем. Обычный пользователь видит своих питомцев, '
-            'а администратор может назначать питомцев другим пользователям через специальный блок в профиле.'
+            'Питомцы — животные, закреплённые за пользователем. Администратор может назначать '
+            'питомцев другим пользователям через блок в профиле.'
+        ) if is_ru else (
+            'Pets are animals linked to a user. Admins can assign pets to other users '
+            'via the admin panel in the profile page.'
         )
-    elif any(word in normalized for word in ['платформ', 'сайт', 'pawmatch']):
+    elif any(word in normalized for word in ['платформ', 'сайт', 'pawmatch', 'platform', 'site']):
         reply = (
-            'PawMatch помогает находить животных из приютов, свайпать анкеты, получать мэтчи, '
-            'связываться с приютами и вести информацию о питомцах в личном кабинете.'
+            'PawMatch помогает находить животных из приютов, свайпать анкеты, получать мэтчи '
+            'и связываться с приютами.'
+        ) if is_ru else (
+            'PawMatch helps you find animals from shelters, swipe through profiles, get matches, '
+            'and contact shelters directly.'
         )
     else:
         matching_shelter = next(
@@ -100,13 +123,18 @@ def assistant_view(request):
             shelter = next(item for item in shelters if item.name == matching_shelter)
             reply = (
                 f'По приюту {shelter.name}: адрес — {shelter.address}. '
-                f'Телефон — {shelter.phone or "не указан"}. '
-                'Открыть все контакты можно на странице «Приюты».'
+                f'Телефон — {shelter.phone or "не указан"}.'
+            ) if is_ru else (
+                f'About {shelter.name}: address — {shelter.address}. '
+                f'Phone — {shelter.phone or "not listed"}.'
             )
         else:
             reply = (
                 'Я могу подсказать по платформе PawMatch, приютам, мэтчам, профилю и питомцам. '
                 'Например: «Как работает мэтчинг?» или «Как связаться с приютом?».'
+            ) if is_ru else (
+                'I can help with PawMatch topics: shelters, matches, profile, and pets. '
+                'Try asking: "How does matching work?" or "How to contact a shelter?".'
             )
 
     return Response({
@@ -115,6 +143,10 @@ def assistant_view(request):
             'Как работает мэтчинг?',
             'Как связаться с приютом?',
             'Что можно делать в профиле?',
+        ] if is_ru else [
+            'How does matching work?',
+            'How to contact a shelter?',
+            "What can I do in the profile?",
         ]
     })
 
@@ -124,16 +156,14 @@ def assistant_view(request):
 @api_view(['GET'])
 def swipe_cards(request):
     already_swiped = Swipe.objects.filter(user=request.user).values_list('animal_id', flat=True)
-    animals = Animal.objects.filter(is_adopted=False).exclude(id__in=already_swiped)
-    serializer = AnimalSerializer(animals, many=True, context={'request': request})
-    return Response(serializer.data)
-
-
-def _should_create_match(animal, user):
-    likes_count = Swipe.objects.filter(animal=animal, is_like=True).exclude(user=user).count()
-    popular_animal = likes_count >= 2
-    even_card_bonus = animal.id % 2 == 0 and likes_count >= 1
-    return popular_animal or even_card_bonus
+    species = request.query_params.get('species')
+    if species == 'dog':
+        animals = Animal.objects.dogs().exclude(id__in=already_swiped)
+    elif species == 'cat':
+        animals = Animal.objects.cats().exclude(id__in=already_swiped)
+    else:
+        animals = Animal.objects.available().exclude(id__in=already_swiped)
+    return Response(AnimalSerializer(animals, many=True, context={'request': request}).data)
 
 
 @api_view(['POST'])
@@ -155,7 +185,9 @@ def swipe_view(request):
         swipe.is_like = is_like
         swipe.save()
 
-    if is_like and _should_create_match(animal, request.user):
+    if is_like:
+        if animal.is_adopted:
+            return Response({'error': 'This animal has already been adopted'}, status=400)
         match, _ = Match.objects.get_or_create(user=request.user, animal=animal)
         match_data = MatchSerializer(match, context={'request': request}).data
         return Response({'status': 'matched', 'match': match_data})
@@ -168,11 +200,10 @@ def swipe_view(request):
 
 # ── Matches ───────────────────────────────────────────────────────────────────
 
-class MatchListView(generics.ListAPIView):
-    serializer_class = MatchSerializer
-
-    def get_queryset(self):
-        return Match.objects.filter(user=self.request.user).select_related('animal', 'animal__shelter')
+class MatchListView(APIView):
+    def get(self, request):
+        matches = Match.objects.filter(user=request.user).select_related('animal', 'animal__shelter')
+        return Response(MatchSerializer(matches, many=True, context={'request': request}).data)
 
 
 # ── Submit animal ─────────────────────────────────────────────────────────────
@@ -191,14 +222,16 @@ def submit_animal(request):
 
 # ── Pets ──────────────────────────────────────────────────────────────────────
 
-class PetListCreateView(generics.ListCreateAPIView):
-    serializer_class = PetSerializer
+class PetListCreateView(APIView):
+    def get(self, request):
+        pets = Pet.objects.filter(user=request.user).select_related('animal', 'animal__shelter')
+        return Response(PetSerializer(pets, many=True, context={'request': request}).data)
 
-    def get_queryset(self):
-        return Pet.objects.filter(user=self.request.user).select_related('animal', 'animal__shelter')
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def post(self, request):
+        serializer = PetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=201)
 
 
 class PetDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -206,6 +239,12 @@ class PetDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Pet.objects.filter(user=self.request.user)
+
+    def perform_destroy(self, instance):
+        animal = instance.animal
+        instance.delete()
+        animal.is_adopted = False
+        animal.save()
 
 
 # ── Admin Pets ────────────────────────────────────────────────────────────────
@@ -219,7 +258,7 @@ class AdminUserListView(generics.ListAPIView):
 class AdminAnimalListView(generics.ListAPIView):
     serializer_class = AnimalSerializer
     permission_classes = [permissions.IsAdminUser]
-    queryset = Animal.objects.filter(is_adopted=False).select_related('shelter').order_by('name')
+    queryset = Animal.objects.all().select_related('shelter').order_by('name')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -233,44 +272,58 @@ class AdminPetCreateView(generics.ListCreateAPIView):
     queryset = Pet.objects.all().select_related('user', 'animal', 'animal__shelter').order_by('-id')
 
     def perform_create(self, serializer):
+        pet = serializer.save()
+        animal = pet.animal
+        if not animal.is_adopted:
+            animal.is_adopted = True
+            animal.save()
+
+
+class AdminMatchListCreateView(generics.ListCreateAPIView):
+    serializer_class = MatchSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = Match.objects.all().select_related('user', 'animal', 'animal__shelter').order_by('-created_at')
+
+    def perform_create(self, serializer):
+        animal = serializer.validated_data.get('animal')
+        if animal and animal.is_adopted:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'animal': 'This animal has already been adopted'})
         serializer.save()
 
 
-# ── Health Records ────────────────────────────────────────────────────────────
+# ── Statistics & Profile ──────────────────────────────────────────────────────
 
-class HealthRecordListCreateView(generics.ListCreateAPIView):
-    serializer_class = HealthRecordSerializer
-
-    def get_queryset(self):
-        pet_id = self.request.query_params.get('pet_id')
-        qs = HealthRecord.objects.filter(pet__user=self.request.user)
-        if pet_id:
-            qs = qs.filter(pet_id=pet_id)
-        return qs
-
-
-class HealthRecordDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = HealthRecordSerializer
-
-    def get_queryset(self):
-        return HealthRecord.objects.filter(pet__user=self.request.user)
+@api_view(['GET'])
+def user_profile_view(request):
+    """Get comprehensive user profile with statistics"""
+    user_data = {
+        'user_id': request.user.id,
+        'username': request.user.username,
+        'email': request.user.email,
+        'is_staff': request.user.is_staff,
+    }
+    serializer = UserProfileSerializer(user_data)
+    return Response(serializer.data)
 
 
-# ── Reminders ─────────────────────────────────────────────────────────────────
-
-class ReminderListCreateView(generics.ListCreateAPIView):
-    serializer_class = ReminderSerializer
-
-    def get_queryset(self):
-        pet_id = self.request.query_params.get('pet_id')
-        qs = Reminder.objects.filter(pet__user=self.request.user)
-        if pet_id:
-            qs = qs.filter(pet_id=pet_id)
-        return qs
-
-
-class ReminderDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = ReminderSerializer
-
-    def get_queryset(self):
-        return Reminder.objects.filter(pet__user=self.request.user)
+@api_view(['GET'])
+def user_swipe_stats_view(request):
+    """Get swipe statistics for authenticated user"""
+    total_swipes = Swipe.objects.filter(user=request.user).count()
+    likes = Swipe.objects.filter(user=request.user, is_like=True).count()
+    dislikes = total_swipes - likes
+    match_rate = (likes / total_swipes * 100) if total_swipes > 0 else 0.0
+    
+    last_swipe = Swipe.objects.filter(user=request.user).order_by('-created_at').first()
+    
+    stats_data = {
+        'user_id': request.user.id,
+        'total_swipes': total_swipes,
+        'likes_count': likes,
+        'dislikes_count': dislikes,
+        'match_rate': round(match_rate, 2),
+        'last_swiped': last_swipe.created_at if last_swipe else None,
+    }
+    serializer = SwipeStatsSerializer(stats_data)
+    return Response(serializer.data)

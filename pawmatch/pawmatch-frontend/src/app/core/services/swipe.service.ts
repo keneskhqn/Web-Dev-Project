@@ -20,4 +20,9 @@ export class SwipeService {
   getMatches(): Observable<Match[]> {
     return this.api.get<Match[]>('/matches/');
   }
+  getSwipeCardsByUrl(url: string): Observable<Animal[]> {
+  return this.api.get<Animal[]>(url);
+  }
+
+  
 }

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Animal } from '../../models/animal.model';
 import { SwipeService } from '../../core/services/swipe.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-swipe',
@@ -13,23 +14,31 @@ export class SwipeComponent implements OnInit {
   isLoading = false;
   matchNotification = '';
   swipeDirection: 'left' | 'right' | '' = '';
+  selectedSpecies: 'all' | 'dog' | 'cat' = 'all';
 
-  constructor(private swipeService: SwipeService) {}
+  constructor(
+    private swipeService: SwipeService,
+    private translate: TranslateService
+  ) {}
 
   ngOnInit(): void {
     this.loadCards();
   }
 
   loadCards(): void {
-    this.isLoading = true;
-    this.swipeService.getSwipeCards().subscribe({
-      next: (data) => {
-        this.animals = data;
-        this.currentIndex = 0;
-        this.isLoading = false;
-      },
-      error: () => { this.isLoading = false; }
-    });
+  this.isLoading = true;
+  const url = this.selectedSpecies !== 'all'
+    ? `/swipe-cards/?species=${this.selectedSpecies}`
+    : '/swipe-cards/';
+
+  this.swipeService.getSwipeCardsByUrl(url).subscribe({
+    next: (data) => {
+      this.animals = data;
+      this.currentIndex = 0;
+      this.isLoading = false;
+    },
+    error: () => { this.isLoading = false; }
+  });
   }
 
   get currentAnimal(): Animal | null {
@@ -61,7 +70,8 @@ export class SwipeComponent implements OnInit {
       this.swipeService.sendSwipe(animal.id, isLike).subscribe({
         next: (res) => {
           if (res.status === 'matched') {
-            this.matchNotification = `💕 Взаимная симпатия с ${animal.name}!`;
+            const matchedText = this.translate.instant('swipe.matched');
+            this.matchNotification = `💕 ${matchedText} ${animal.name}!`;
             setTimeout(() => this.matchNotification = '', 3500);
           }
           this.nextCard();
@@ -79,8 +89,13 @@ export class SwipeComponent implements OnInit {
       this.animals = [];
     }
   }
-
+  onFilterChange(species: 'all' | 'dog' | 'cat'): void {
+  this.selectedSpecies = species;
+  this.loadCards();
+  }
+  
   getSpeciesEmoji(species: string): string {
     return species === 'cat' ? '🐱' : '🐶';
   }
+
 }

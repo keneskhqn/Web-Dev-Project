@@ -1,29 +1,23 @@
 <div class="pets-page">
   <div class="page-header">
-    <h1>🏠 Мои питомцы</h1>
-    <p class="subtitle">Твои пушистые друзья</p>
+    <h1>🏠 {{ 'pets.title' | translate }}</h1>
+    <p class="subtitle">{{ 'pets.subtitle' | translate }}</p>
   </div>
 
-  @if (isLoading) {
-    <div class="loader-wrap">
-      <div class="paw-spin">🐾</div>
-      <p>Загружаем питомцев...</p>
-    </div>
-  }
+  <div *ngIf="isLoading" class="loader-wrap">
+    <div class="paw-spin">🐾</div>
+    <p>{{ 'pets.loading' | translate }}</p>
+  </div>
 
-  @if (!isLoading && pets.length === 0) {
-    <div class="empty-state">
-      <span class="empty-icon">🏡</span>
-      <h3>Питомцев пока нет</h3>
-      <p>Усынови животного из приюта и добавь его сюда!</p>
-      <a routerLink="/swipe" class="btn-go">Найти питомца 🐾</a>
-    </div>
-  }
+  <div *ngIf="!isLoading && pets.length === 0" class="empty-state">
+    <span class="empty-icon">🏡</span>
+    <h3>{{ 'pets.emptyTitle' | translate }}</h3>
+    <p>{{ 'pets.emptyMessage' | translate }}</p>
+    <a routerLink="/swipe" class="btn-go">{{ 'buttons.goToSwipe' | translate }} 🐾</a>
+  </div>
 
-  @if (!isLoading && pets.length > 0) {
-    <div class="pets-grid">
-      @for (pet of pets; track pet.id) {
-        <div class="pet-card" (click)="onPetClick(pet)">
+  <div *ngIf="!isLoading && pets.length > 0" class="pets-grid">
+    <div *ngFor="let pet of pets" class="pet-card" (click)="onPetClick(pet)">
           <div class="pet-photo-wrap">
             <img
               [src]="pet.animal.photo || 'assets/placeholder-paw.png'"
@@ -35,11 +29,9 @@
           <div class="pet-body">
             <h3>{{ pet.name }}</h3>
             <p class="pet-breed">{{ pet.animal.breed }}</p>
-            <p class="pet-weight">⚖️ {{ pet.weight }} кг</p>
+            <p class="pet-weight">⚖️ {{ pet.weight }} {{ 'pets.age' | translate }}</p>
             <div class="pet-arrow">→</div>
           </div>
         </div>
-      }
-    </div>
-  }
+  </div>
 </div>

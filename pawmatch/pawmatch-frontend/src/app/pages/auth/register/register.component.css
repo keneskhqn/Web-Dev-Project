@@ -108,7 +108,7 @@
   border: 2px solid #f5c2d9;
   border-radius: 14px;
   font-size: 15px;
-  background: #fff9fc;
+  background: var(--bg-elevated);
   color: #3d1a2e;
   transition: border-color 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
@@ -205,4 +205,42 @@
     margin: 16px;
     padding: 36px 24px;
   }
+}
+
+:host-context(body.dark-theme) .auth-wrapper,
+:host-context(body[data-theme="dark"]) .auth-wrapper {
+  background: linear-gradient(135deg, #0d0b12 0%, #151220 60%, #1a1030 100%);
+}
+
+:host-context(body.dark-theme) .auth-card,
+:host-context(body[data-theme="dark"]) .auth-card {
+  background: rgba(26, 22, 37, 0.96);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+:host-context(body.dark-theme) .auth-logo h1,
+:host-context(body[data-theme="dark"]) .auth-logo h1 {
+  color: var(--text);
+}
+
+:host-context(body.dark-theme) .tagline,
+:host-context(body[data-theme="dark"]) .tagline {
+  color: var(--text-muted);
+}
+
+:host-context(body.dark-theme) label,
+:host-context(body[data-theme="dark"]) label {
+  color: var(--text-muted);
+}
+
+:host-context(body.dark-theme) .input-wrapper input,
+:host-context(body[data-theme="dark"]) .input-wrapper input {
+  background: var(--input-bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+:host-context(body.dark-theme) .auth-link,
+:host-context(body[data-theme="dark"]) .auth-link {
+  color: var(--text-muted);
 }

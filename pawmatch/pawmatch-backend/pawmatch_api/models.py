@@ -2,10 +2,15 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+class AvailableAnimalManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_adopted=False)
+
+
 class Shelter(models.Model):
     name      = models.CharField(max_length=200)
     address   = models.TextField()
-    phone     = models.CharField(max_length=20, blank=True)          # добавлено!
+    phone     = models.CharField(max_length=20, blank=True)  
     latitude  = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     telegram  = models.CharField(max_length=100, blank=True)
@@ -15,7 +20,14 @@ class Shelter(models.Model):
     def __str__(self):
         return self.name
 
-
+class AnimalManager(models.Manager):
+    def available(self):
+        return self.filter(is_adopted=False)
+    def dogs(self):
+        return self.filter(species='dog', is_adopted=False)
+    def cats(self):
+        return self.filter(species='cat', is_adopted=False)
+    
 class Animal(models.Model):
     SPECIES_CHOICES = [('dog', 'Собака'), ('cat', 'Кошка'), ('other', 'Другое')]
 
@@ -34,6 +46,8 @@ class Animal(models.Model):
     is_neutered   = models.BooleanField(default=False)
     is_adopted    = models.BooleanField(default=False)
 
+    available = AvailableAnimalManager() 
+    objects = AnimalManager()
     def likes_count(self):
         return Swipe.objects.filter(animal=self, is_like=True).count()
 
@@ -69,37 +83,10 @@ class Match(models.Model):
 
 class Pet(models.Model):
     user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets')
-    animal     = models.ForeignKey(Animal, on_delete=models.CASCADE)
+    animal     = models.OneToOneField(Animal, on_delete=models.CASCADE)
     name       = models.CharField(max_length=100)
     birth_date = models.DateField()
     weight     = models.FloatField()
 
     def __str__(self):
         return f'{self.name} (хозяин: {self.user.username})'
-
-
-class HealthRecord(models.Model):
-    RECORD_TYPES = [
-        ('vaccination', 'Прививка'),
-        ('medication',  'Лечение'),
-        ('checkup',     'Осмотр'),
-    ]
-    pet          = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='health_records')
-    record_type  = models.CharField(max_length=20, choices=RECORD_TYPES)
-    title        = models.CharField(max_length=200)
-    description  = models.TextField(blank=True)
-    date         = models.DateField()
-    next_due_date = models.DateField(null=True, blank=True)
-
-    def __str__(self):
-        return f'{self.title} ({self.pet.name})'
-
-
-class Reminder(models.Model):
-    pet          = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='reminders')
-    title        = models.CharField(max_length=200)
-    date_time    = models.DateTimeField()
-    is_completed = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f'{self.title} — {self.pet.name}'

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Pet } from '../../models/pet.model';
 import { PetService } from '../../core/services/pet.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-pet-list',
@@ -12,7 +13,11 @@ export class PetListComponent implements OnInit {
   pets: Pet[] = [];
   isLoading = false;
 
-  constructor(private petService: PetService, private router: Router) {}
+  constructor(
+    private petService: PetService,
+    private router: Router,
+    private translate: TranslateService
+  ) {}
 
   ngOnInit(): void {
     this.loadPets();

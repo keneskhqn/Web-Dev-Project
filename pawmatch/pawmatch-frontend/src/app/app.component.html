@@ -1,44 +1,61 @@
-<!-- Верхняя навигация (видна только когда пользователь авторизован) -->
-@if (showNav) {
+<!-- Верхняя навигация -->
+<ng-container *ngIf="showNav">
   <header class="app-header">
     <div class="header-inner">
       <a routerLink="/swipe" class="logo">
         <span class="logo-paw">🐾</span>
         <span class="logo-text">PawMatch</span>
       </a>
+
       <nav class="header-nav">
-        <a routerLink="/swipe"   routerLinkActive="active">Свайп</a>
-        <a routerLink="/matches" routerLinkActive="active">Матчи</a>
-        <a routerLink="/pets"    routerLinkActive="active">Питомцы</a>
-        <a routerLink="/profile" routerLinkActive="active">Профиль</a>
+        <a routerLink="/swipe" routerLinkActive="active">{{ 'nav.swipe' | translate }}</a>
+        <a routerLink="/matches" routerLinkActive="active">{{ 'nav.matches' | translate }}</a>
+        <a routerLink="/pets" routerLinkActive="active">{{ 'nav.pets' | translate }}</a>
+        <a routerLink="/shelters" routerLinkActive="active">{{ 'nav.shelters' | translate }}</a>
+        <a routerLink="/about" routerLinkActive="active">{{ 'nav.about' | translate }}</a>
+        <a routerLink="/help" routerLinkActive="active">{{ 'nav.help' | translate }}</a>
+        <a routerLink="/profile" routerLinkActive="active">{{ 'nav.profile' | translate }}</a>
+        
+        <div class="lang-dropdown">
+          <select [value]="currentLang" (change)="changeLanguage($any($event.target).value)">
+            <option value="ru">{{ 'language.ru' | translate }}</option>
+            <option value="en">{{ 'language.en' | translate }}</option>
+          </select>
+        </div>
+        
+        <button type="button" class="theme-toggle" (click)="toggleTheme()">
+          {{ isDarkTheme ? '☀️ ' + ('theme.light' | translate) : '🌙 ' + ('theme.dark' | translate) }}
+        </button>
       </nav>
     </div>
   </header>
-}
+</ng-container>
 
-<!-- Основной контент -->
+<!-- ОСНОВНОЙ КОНТЕНТ -->
 <main [class.with-header]="showNav">
   <router-outlet></router-outlet>
 </main>
 
-<!-- Нижняя навигация (мобильная) -->
-@if (showNav) {
+<!-- НИЖНЯЯ НАВИГАЦИЯ -->
+<ng-container *ngIf="showNav">
   <nav class="bottom-nav">
-    <a routerLink="/swipe"   routerLinkActive="active" class="nav-item">
-      <span class="nav-icon">🐾</span>
-      <span class="nav-label">Свайп</span>
+    <a routerLink="/swipe" routerLinkActive="active" class="nav-item">
+      🐾 <span>{{ 'nav.swipe' | translate }}</span>
     </a>
+
     <a routerLink="/matches" routerLinkActive="active" class="nav-item">
-      <span class="nav-icon">💕</span>
-      <span class="nav-label">Матчи</span>
+      💕 <span>{{ 'nav.matches' | translate }}</span>
     </a>
-    <a routerLink="/pets"    routerLinkActive="active" class="nav-item">
-      <span class="nav-icon">🏠</span>
-      <span class="nav-label">Питомцы</span>
+
+    <a routerLink="/pets" routerLinkActive="active" class="nav-item">
+      🏠 <span>{{ 'nav.pets' | translate }}</span>
     </a>
+
     <a routerLink="/profile" routerLinkActive="active" class="nav-item">
-      <span class="nav-icon">👤</span>
-      <span class="nav-label">Профиль</span>
+      👤 <span>{{ 'nav.profile' | translate }}</span>
     </a>
   </nav>
-}
+</ng-container>
+
+<!-- FOOTER ВСЕГДА ВНИЗУ -->
+<app-footer></app-footer>

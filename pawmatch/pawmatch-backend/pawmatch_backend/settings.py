@@ -16,11 +16,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    # Local
     'pawmatch_api',
 ]
 
@@ -75,7 +73,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ── DRF ──────────────────────────────────────────────────────────────────────
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -85,13 +83,12 @@ REST_FRAMEWORK = {
     ),
 }
 
-# ── JWT ───────────────────────────────────────────────────────────────────────
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME':  timedelta(days=7),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
 }
 
-# ── CORS — разрешаем Angular на 4200 ─────────────────────────────────────────
+
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
     'http://127.0.0.1:4200',
