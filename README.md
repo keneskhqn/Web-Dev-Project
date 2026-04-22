@@ -1,17 +1,23 @@
 Group Members: Kayerzhan Tanzilya, Imekeshova Malika, Keneskhan Alkhaidar
+
 ## Project: PawMatch
 
-PawMatch is a platform that connects animal shelters with users who want to adopt pets. The system allows users to browse animals available for adoption and submit adoption requests. It simplifies the adoption process by providing a clear and structured way for users to apply for animals from shelters
+PawMatch is a pet adoption platform that connects shelters with people who want to adopt. Users can browse animals, swipe/like profiles, and manage matched pets through a structured Django + Angular application.
 
+## Backend Models
 
-## Models:
-  * User (built-in Django model)
-  * Shelter (animal shelter information such as name, address, contact)
-  * Animal (animals available for adoption with details like name, species, age, and medcal status)
-  * AdoptionRequest (user applications to adopt animals with status tracking)
+- User (built-in Django auth model)
+- Shelter (name, address, phone, location, social links, website)
+- Animal (adoptable pet profile: species, breed, age, vaccination/neutering, adoption status)
+- Swipe (user like/dislike action for an animal)
+- Match (successful user-animal match)
+- Pet (a user-owned pet record linked to an animal)
 
-## Relationships:
-  * Animal references Shelter to indicate which shelter the animal belongs to
-  * AdoptionRequest references User to indicate who is applying for adoption
-  * AdoptionRequest references Animal to indicate which animal is requested
-  * Shelter references User to indicate that each shelter is managed by a registered user
+## Model Relationships
+
+- Animal -> Shelter (many-to-one): each animal belongs to one shelter
+- Animal -> User as submitted_by (many-to-one, optional): tracks who submitted the animal
+- Swipe -> User and Animal (many-to-one on both sides, unique per user-animal pair)
+- Match -> User and Animal (many-to-one on both sides, unique per user-animal pair)
+- Pet -> User (many-to-one): one user can have multiple pets
+- Pet -> Animal (one-to-one): one animal can become one pet record
